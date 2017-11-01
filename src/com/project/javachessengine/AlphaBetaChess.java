@@ -31,6 +31,36 @@ public class AlphaBetaChess {
 		
 	}
 	
+	 public static void makeMove(String move) {
+	        
+		 if (move.charAt(4)!='P') {			//x1,y1,x2,y2,captured piece	regular move type
+	            chessBoard[Character.getNumericValue(move.charAt(2))][Character.getNumericValue(move.charAt(3))]=chessBoard[Character.getNumericValue(move.charAt(0))][Character.getNumericValue(move.charAt(1))];
+	            chessBoard[Character.getNumericValue(move.charAt(0))][Character.getNumericValue(move.charAt(1))]=" ";
+	        } else {
+	            //if pawn promotion			//column1,column2,captured-piece,new-piece,P	pawn promotion move type
+	            chessBoard[1][Character.getNumericValue(move.charAt(0))]=" ";
+	            chessBoard[0][Character.getNumericValue(move.charAt(1))]=String.valueOf(move.charAt(3));
+	        }
+	    }
+	
+	  public static void undoMove(String move) {
+	        
+		  	//Basically we are puting everything back in place, this is what gets executed when we want to undo a move.
+		  	if (move.charAt(4)!='P') {	
+	            chessBoard[Character.getNumericValue(move.charAt(0))][Character.getNumericValue(move.charAt(1))]=chessBoard[Character.getNumericValue(move.charAt(2))][Character.getNumericValue(move.charAt(3))];
+	            
+	            /*in this statement RHS of euqation is not set to " " because there could be any element in that location before we moved.
+	             * it could or could not be empty
+	            */
+	            
+	            chessBoard[Character.getNumericValue(move.charAt(2))][Character.getNumericValue(move.charAt(3))]=String.valueOf(move.charAt(4));
+	        } else {
+	            //if pawn promotion
+	            chessBoard[1][Character.getNumericValue(move.charAt(0))]="P";
+	            chessBoard[0][Character.getNumericValue(move.charAt(1))]=String.valueOf(move.charAt(2));
+	        }
+	    }
+	 
 	public static String possibleMoves(){
 		
 		String list = "";
@@ -60,7 +90,7 @@ public class AlphaBetaChess {
 		int r =i/8, c=i%8;
 		for(int j=-1; j<=1;j++){
 			try{	//capture
-				if(Character.isLowerCase(chessBoard[r-1][c+j].charAt(0))|| i>=16){
+				if (Character.isLowerCase(chessBoard[r-1][c+j].charAt(0)) && i>=16) {
 					oldPiece =chessBoard[r-1][c+j];
 					chessBoard[r][c] = " ";
 					chessBoard[r-1][c+j] = "P";
@@ -74,26 +104,67 @@ public class AlphaBetaChess {
 				}
 			}catch(Exception e){}
 			
-			try{	//promotion and capture
-				if(Character.isLowerCase(chessBoard[r-1][c+j].charAt(0))|| i<16){
-					
-					String [] temp = {"Q","R","B","K"};
-					
-					oldPiece =chessBoard[r-1][c+j];
-					chessBoard[r][c] = " ";
-					chessBoard[r-1][c+j] = "P";
-					if(kingSafe()){
-						list = list+ r+c +(r-1)+(c+j)+oldPiece;		
-					}
-					
-					chessBoard[r][c] = "P";
-					chessBoard[r-1][c+j] = oldPiece;
-					
-				}
-			}catch(Exception e){}
-			
+			 try {//promotion && capture
+	                if (Character.isLowerCase(chessBoard[r-1][c+j].charAt(0)) && i<16) {
+	                    String[] temp={"Q","R","B","K"};
+	                    for (int k=0; k<4; k++) {
+	                        oldPiece=chessBoard[r-1][c+j];
+	                        chessBoard[r][c]=" ";
+	                        chessBoard[r-1][c+j]=temp[k];
+	                        if (kingSafe()) {
+	                            //column1,column2,captured-piece,new-piece,P
+	                            list=list+c+(c+j)+oldPiece+temp[k]+"P";
+	                        }
+	                        chessBoard[r][c]="P";
+	                        chessBoard[r-1][c+j]=oldPiece;
+	                    }
+	                }
+	            } catch (Exception e) {}
 		}
 		
+		 try {//move one up
+	            if (" ".equals(chessBoard[r-1][c]) && i>=16) {
+	                oldPiece=chessBoard[r-1][c];
+	                chessBoard[r][c]=" ";
+	                chessBoard[r-1][c]="P";
+	                if (kingSafe()) {
+	                    list=list+r+c+(r-1)+c+oldPiece;
+	                }
+	                chessBoard[r][c]="P";
+	                chessBoard[r-1][c]=oldPiece;
+	            }
+	        } catch (Exception e) {}
+		
+		 try {//promotion && no capture
+	            if (" ".equals(chessBoard[r-1][c]) && i<16) {
+	                String[] temp={"Q","R","B","K"};
+	                for (int k=0; k<4; k++) {
+	                    oldPiece=chessBoard[r-1][c];
+	                    chessBoard[r][c]=" ";
+	                    chessBoard[r-1][c]=temp[k];
+	                    if (kingSafe()) {
+	                        //column1,column2,captured-piece,new-piece,P
+	                        list=list+c+c+oldPiece+temp[k]+"P";
+	                    }
+	                    chessBoard[r][c]="P";
+	                    chessBoard[r-1][c]=oldPiece;
+	                }
+	            }
+	        } catch (Exception e) {}
+		 
+		 try {//move two up
+	            if (" ".equals(chessBoard[r-1][c]) && " ".equals(chessBoard[r-2][c]) && i>=48) {
+	                oldPiece=chessBoard[r-2][c];
+	                chessBoard[r][c]=" ";
+	                chessBoard[r-2][c]="P";
+	                if (kingSafe()) {
+	                    list=list+r+c+(r-2)+c+oldPiece;
+	                }
+	                chessBoard[r][c]="P";
+	                chessBoard[r-2][c]=oldPiece;
+	            }
+	        } catch (Exception e) {}
+		 
 		return list;
 	}
 	

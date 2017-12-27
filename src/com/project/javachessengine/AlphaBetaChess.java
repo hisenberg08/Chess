@@ -1,10 +1,13 @@
 package com.project.javachessengine;
 
+import java.util.Arrays;
+
 import javax.swing.*;
 
 public class AlphaBetaChess {
 		
 	static int kingPositionC,kingPositionL;	//monitors the positions of king lowercase and capital 
+	 static int globalDepth=4;
 	static String chessBoard[][]={
 			 
 		//Capitals is white team and lowercase is black team.
@@ -21,39 +24,117 @@ public class AlphaBetaChess {
 	
 	public static void main(String[] args) {
 		
-		/*UserInterface ui = new UserInterface();
+		 while (!"A".equals(chessBoard[kingPositionC/8][kingPositionC%8])) {kingPositionC++;}//get King's location
+	     while (!"a".equals(chessBoard[kingPositionL/8][kingPositionL%8])) {kingPositionL++;}//get king's location
+		
+		UserInterface ui = new UserInterface();
 		JFrame frame = new JFrame("Chess 1.1.0");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.add(ui);
 		frame.setSize(500, 500);
-		frame.setVisible(true);*/
-		System.out.println(possibleMoves());
+		frame.setVisible(true);
+	     System.out.println(possibleMoves());
+	        makeMove(alphaBeta(globalDepth, 1000000, -1000000, "", 0));
+	        for (int i=0;i<8;i++) {
+	            System.out.println(Arrays.toString(chessBoard[i]));
+	        }
 		
 	}
 	
-	 public static void makeMove(String move) {
+	/*this is the recursive method that search the play tree uptil the depth of 4.
+	 * It returns a move + rating*/
+	
+	public static String alphaBeta(int depth, int beta, int alpha, String move, int player) {
+        String list=possibleMoves();
+        if (depth==0 || list.length()==0) {
+        	return move+(rating()*(player*2-1));
+        	}
+        
+        //sort later
+        
+        player=1-player;//either 1 or 0
+        
+        /*we iterate over all the possible moves and try to find out the best move based on the rating*/
+        
+        for (int i=0;i<list.length();i+=5) {
+            makeMove(list.substring(i,i+5));
+            flipBoard();
+            String returnString=alphaBeta(depth-1, beta, alpha, list.substring(i,i+5), player);
+            int value=Integer.valueOf(returnString.substring(5));
+            flipBoard();
+            undoMove(list.substring(i,i+5));
+            if (player==0) {
+                if (value<=beta) {beta=value; if (depth==globalDepth) {move=returnString.substring(0,5);}}
+            } else {
+                if (value>alpha) {alpha=value; if (depth==globalDepth) {move=returnString.substring(0,5);}}
+            }
+            if (alpha>=beta) {
+                if (player==0) return move+beta;
+                else return move+alpha;
+            }
+        }
+        if (player==0) return move+beta; 
+        else return move+alpha;
+    }
+    private static int rating() {
+		
+    	
+    	return 0;
+	}
+
+    //after every move we basically flip the board and make the opponent move as if its ours.
+	public static void flipBoard() {
+		  String temp;
+	        for (int i=0;i<32;i++) {
+	            int r=i/8, c=i%8;
+	            if (Character.isUpperCase(chessBoard[r][c].charAt(0))) {
+	                temp=chessBoard[r][c].toLowerCase();
+	            } else {
+	                temp=chessBoard[r][c].toUpperCase();
+	            }
+	            if (Character.isUpperCase(chessBoard[7-r][7-c].charAt(0))) {
+	                chessBoard[r][c]=chessBoard[7-r][7-c].toLowerCase();
+	            } else {
+	                chessBoard[r][c]=chessBoard[7-r][7-c].toUpperCase();
+	            }
+	            chessBoard[7-r][7-c]=temp;
+	        }
+	        int kingTemp=kingPositionC;
+	        kingPositionC=63-kingPositionL;
+	        kingPositionL=63-kingTemp;
+    }
+	
+	//this method will actually make a move. 
+	public static void makeMove(String move) {
 	        
 		 if (move.charAt(4)!='P') {			//x1,y1,x2,y2,captured piece	regular move type
 	            chessBoard[Character.getNumericValue(move.charAt(2))][Character.getNumericValue(move.charAt(3))]=chessBoard[Character.getNumericValue(move.charAt(0))][Character.getNumericValue(move.charAt(1))];
 	            chessBoard[Character.getNumericValue(move.charAt(0))][Character.getNumericValue(move.charAt(1))]=" ";
+	            if ("A".equals(chessBoard[Character.getNumericValue(move.charAt(2))][Character.getNumericValue(move.charAt(3))])) {
+	                kingPositionC=8*Character.getNumericValue(move.charAt(2))+Character.getNumericValue(move.charAt(3));
+	                }
+	            
 	        } else {
 	            //if pawn promotion			//column1,column2,captured-piece,new-piece,P	pawn promotion move type
 	            chessBoard[1][Character.getNumericValue(move.charAt(0))]=" ";
 	            chessBoard[0][Character.getNumericValue(move.charAt(1))]=String.valueOf(move.charAt(3));
 	        }
 	    }
-	
+	//Basically we are puting everything back in place, this is what gets executed when we want to undo a move.
 	  public static void undoMove(String move) {
 	        
-		  	//Basically we are puting everything back in place, this is what gets executed when we want to undo a move.
+		  	//check if move we made was not a pawn promotion.
 		  	if (move.charAt(4)!='P') {	
 	            chessBoard[Character.getNumericValue(move.charAt(0))][Character.getNumericValue(move.charAt(1))]=chessBoard[Character.getNumericValue(move.charAt(2))][Character.getNumericValue(move.charAt(3))];
 	            
-	            /*in this statement RHS of euqation is not set to " " because there could be any element in that location before we moved.
+	            /*in this statement RHS of equation is not set to " " because there could be any element in that location before we moved.
 	             * it could or could not be empty
 	            */
 	            
 	            chessBoard[Character.getNumericValue(move.charAt(2))][Character.getNumericValue(move.charAt(3))]=String.valueOf(move.charAt(4));
+	            if ("A".equals(chessBoard[Character.getNumericValue(move.charAt(0))][Character.getNumericValue(move.charAt(1))])) {
+	                kingPositionC=8*Character.getNumericValue(move.charAt(0))+Character.getNumericValue(move.charAt(1));
+	            }
 	        } else {
 	            //if pawn promotion
 	            chessBoard[1][Character.getNumericValue(move.charAt(0))]="P";
@@ -89,7 +170,7 @@ public class AlphaBetaChess {
 		String list ="", oldPiece;
 		int r =i/8, c=i%8;
 		for(int j=-1; j<=1;j++){
-			try{	//capture
+			try{																//check diagonally in front direction if something could be captured.
 				if (Character.isLowerCase(chessBoard[r-1][c+j].charAt(0)) && i>=16) {
 					oldPiece =chessBoard[r-1][c+j];
 					chessBoard[r][c] = " ";
@@ -104,7 +185,7 @@ public class AlphaBetaChess {
 				}
 			}catch(Exception e){}
 			
-			 try {//promotion && capture
+			 try {//promotion && capture						
 	                if (Character.isLowerCase(chessBoard[r-1][c+j].charAt(0)) && i<16) {
 	                    String[] temp={"Q","R","B","K"};
 	                    for (int k=0; k<4; k++) {
@@ -172,9 +253,9 @@ public class AlphaBetaChess {
 		String list ="", oldPiece;
 		int temp = 1;
 		int r =i/8, c=i%8;
-		for(int j=-1; j<=1;j++){
+		for(int j=-1; j<=1;j+=2){
 			try{
-				while(" ".equals(chessBoard[r][c+temp*j])){
+				while(" ".equals(chessBoard[r][c+temp*j])){			//traverse along the line horizontally.
 					oldPiece =chessBoard[r][c+temp*j];
 					chessBoard[r][c] = " ";
 					chessBoard[r][c+temp*j] = "R";
@@ -204,7 +285,7 @@ public class AlphaBetaChess {
 			temp=1;
 			
 			try{
-				while(" ".equals(chessBoard[r+temp*j][c])){
+				while(" ".equals(chessBoard[r+temp*j][c])){					//traverse along the vertical.
 					oldPiece =chessBoard[r+temp*j][c];
 					chessBoard[r][c] = " ";
 					chessBoard[r+temp*j][c] = "R";
@@ -236,6 +317,7 @@ public class AlphaBetaChess {
 		return list;
 	}
 	
+	//we will move the piece 1 step in one direction and 2 steps in another direction. we will have 2 try blocks each taking care of pieces at alternate loction.
 	public static String possibleK(int i){
 		String list ="", oldPiece;
 		int r =i/8, c=i%8;
@@ -281,7 +363,7 @@ public class AlphaBetaChess {
 		int r =i/8, c=i%8;
 		int temp =1;
 		
-		for(int j=-1; j<=1;j+=2){			//j+=2 because Bishop won't be travelling on 0 as it can only walk diagonally. Rest everythinh is same as queen.
+		for(int j=-1; j<=1;j+=2){			//j+=2 because Bishop won't be travelling on 0 as it can only walk diagonally. Rest everything is same as queen.
 			for(int k=-1; k<=1 ;k+=2){
 				try{
 					while(" ".equals(chessBoard[r+temp*j][c+temp*k])){
@@ -330,9 +412,9 @@ public class AlphaBetaChess {
 		
 		for(int j=-1; j<=1;j++){
 			for(int k=-1; k<=1 ;k++){
-				if(j!=0 || k!=0){
+				if(j!=0 || k!=0){													//condition where we do not want to check, i.e. when j==0 and k==0
 					try{
-						while(" ".equals(chessBoard[r+temp*j][c+temp*k])){
+						while(" ".equals(chessBoard[r+temp*j][c+temp*k])){			//move unitl the there is an empty column
 							
 							oldPiece = chessBoard[r+temp*j][c+temp*k];
 							chessBoard[r][c] = " ";
@@ -346,7 +428,7 @@ public class AlphaBetaChess {
 							temp++;
 						}
 						
-						if(Character.isLowerCase(chessBoard[r+temp*j][c+temp*k].charAt(0))){
+						if(Character.isLowerCase(chessBoard[r+temp*j][c+temp*k].charAt(0))){		//check whether to capture the piece or leave if its our own.
 							
 							oldPiece = chessBoard[r+temp*j][c+temp*k];
 							chessBoard[r][c] = " ";
@@ -397,12 +479,15 @@ public class AlphaBetaChess {
 		return list;
 }
 
+	/*After a move is made this method checks if the king is safe.
+	 * For this we check all the directions and opponent's piece that could threathen king's safety.*/
+	
 	private static boolean kingSafe() {
 		
 		//bishop and queen
 		int temp =1;
 		
-		for(int i=-1; i<=1;i+=2){			
+		for(int i=-1; i<=1;i+=2){									//checking diagonals 			
 			for(int j=-1; j<=1 ;j+=2){
 				try{
 					while(" ".equals(chessBoard[kingPositionC/8+temp*i][kingPositionC%8 + temp*j])) temp++;
@@ -419,7 +504,7 @@ public class AlphaBetaChess {
 		//rook and queen
 				//int temp =1;
 				
-				for(int i=-1; i<=1;i+=2){			
+				for(int i=-1; i<=1;i+=2){										//check horizontal and vertical
 						try{
 							while(" ".equals(chessBoard[kingPositionC/8][kingPositionC%8 + temp*i])) temp++;
 							if("r".equals(chessBoard[kingPositionC/8][kingPositionC%8 + temp*i]) 

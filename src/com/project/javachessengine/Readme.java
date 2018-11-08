@@ -14,9 +14,3 @@
      * (1234b represents row1,column2 moves to row3, column4 which captured
      * b (a space represents no capture))
   */
-
-
-
-/*This is not my code, this is a sample project I created by referring from a tutorial.
- * All the code is taken from the tutorial with some minor tweaks.
- */
